@@ -1,0 +1,83 @@
+model:
+  # arch: translator_arxiv_chatglm
+  arch: translator_arxiv_chatglm
+  model_type: translator_generate_stage2
+  load_finetuned: False
+  pretrained: "Baselines/GraphTranslator/Translator/model_output/pretrain_arxiv_stage2_new/checkpoint_0.pth"
+  llm_dir: "Baselines/GraphTranslator/Translator/models/chatglm-6b"
+  bert_dir: "Baselines/GraphTranslator/Translator/models/bert-base-uncased"
+
+
+  # behavior encoder
+  behavior_length: 768
+  freeze_behavior: True
+  behavior_precision: "fp16"
+
+  # Text
+  max_txt_len: 2048
+
+  # Q-Former
+  num_query_token: 32
+  cross_attention_freq: 2
+
+datasets:
+  arxiv_caption: # name of the dataset builder
+    type: translator_generate_stage2
+    datasets_dir: "Baselines/GraphTranslator/data/arxiv/arxiv_test_prbcd_global.csv"
+    pred_dir: "Baselines/GraphTranslator/data/arxiv/pred_prbcd_global.txt"
+    arxiv_processor:
+      train:
+        name: "translator_arxiv_train"
+        max_length: 1024
+        vocab_size: 100000
+    text_processor:
+      train:
+        name: "translator_caption"
+
+
+run:
+  task: arxiv_generate
+  # optimizer
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 1e-4
+  min_lr: 1e-5
+  warmup_lr: 1e-6
+
+  weight_decay: 0.05
+  max_epoch: 1
+  batch_size_train: 1
+  batch_size_eval: 64
+  warmup_steps: 5000
+  accum_grad_iters: 32
+  log_freq: 50
+
+
+  seed: 42
+  output_dir: "Baselines/GraphTranslator/Translator/model_output/pretrain_arxiv_stage2_new"
+
+  amp: True
+  resume_ckpt_path: null
+
+  evaluate: False
+  train_splits: ["train"]
+
+  device: "cuda:0"
+  dist_url: "env://"
+  distributed: True
+
+prompt:
+  generate_prompt: [
+  "\nQuestion: Please summarize the topic and content of the paper and its citations in English.\nAnswer:",
+  # "\nQuestion: Please summarize the description of the product and its co-purchased products in English.\nAnswer:",
+  # "\nQuestion: Based on the summary of the above paper titled <{}>, please determine into which of the following 7 Cora categories would this paper most likely fall?",
+  "\nQuestion: Based on the summary of the above paper titled <{}>, please determine into which of the following 40 Arxiv categories would this paper most likely fall?",
+  # "\nQuestion: Based on the summary of the above paper titled <{}>, please determine into which of the following 3 Pubmed categories would this paper most likely fall?",
+  # "\nQuestion: Based on the summary of the description of the product named <{}>, please determine into which of the following 47 amazon product categories would this product most likely fall?",
+  # "categories: <Case_Based; Genetic_Algorithms; Neural_Networks; Probabilistic_Methods; Reinforcement_Learning; Rule_Learning; Theory>",
+  # "categories: <Diabetes Mellitus Experimental; Diabetes Mellitus Type1; Diabetes Mellitus Type2>",
+  "categories: <cs.NA(Numerical Analysis); cs.MM(Multimedia); cs.LO(Logic in Computer Science); cs.CY(Computers and Society); cs.CR(Cryptography and Security); cs.DC(Distributed, Parallel, and Cluster Computing); cs.HC(Human-Computer Interaction); cs.CE(Computational Engineering, Finance, and Science); cs.NI(Networking and Internet Architecture); cs.CC(Computational Complexity); cs.AI(Artificial Intelligence); cs.MA(Multiagent Systems); cs.GL(General Literature); cs.NE(Neural and Evolutionary Computing); cs.SC(Symbolic Computation); cs.AR(Hardware Architecture); cs.CV(Computer Vision and Pattern Recognition); cs.GR(Graphics); cs.ET(Emerging Technologies); cs.SY(Systems and Control); cs.CG(Computational Geometry); cs.OH(Other Computer Science); cs.PL(Programming Languages); cs.SE(Software Engineering); cs.LG(Machine Learning); cs.SD(Sound); cs.SI(Social and Information Networks); cs.RO(Robotics); cs.IT(Information Theory); cs.PF(Performance); cs.CL(Computational Complexity); cs.IR(Information Retrieval); cs.MS(Mathematical Software); cs.FL(Formal Languages and Automata Theory); cs.DS(Data Structures and Algorithms); cs.OS(Operating Systems); cs.GT(Computer Science and Game Theory); cs.DB(Databases); cs.DL(Digital Libraries); cs.DM(Discrete Mathematics)>",
+  "Please give the most likely category and give your reasoning. Provide response in JSON format with the following keys: category, reason. \n\nAnswer:",
+  # "Please give the most likely category and give your reasoning. \n\nAnswer:",
+  "Round 0:\n\nQuestion:We are trying to explore the paper titled {}. \n Please summarize the topic and content of the paper and its citations in English \n\nAnswer:{} \n\nRound 1:\n{}"
+  # "Round 0:\n\nQuestion:We are trying to explore the product named {}. \n Please summarize the description of the product and its co-purchased products in English \n\nAnswer:{} \n\nRound 1:\n{}"
+]
