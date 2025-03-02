@@ -1,0 +1,17 @@
+{
+    "model_path": "/scratch/qz2086/TrustGLM/Baselines/LLaGA/checkpoints/sup-ind/cora_sup/llaga-vicuna-7b-sbert-2-10-2-layer-mlp-projector_nc_epoch3/checkpoint-306",
+    "model_base": "/scratch/qz2086/TrustGLM/Baselines/LLaGA/vicuna-7b-v1.5-16k",
+    "conv_mode": "v1", 
+    "pretrained_embedding_type": "sbert",
+    "use_hop": 2,
+    "sample_neighbor_size": 10,
+    "task": "nc",
+    "dataset": "cora_sup",
+    "temperature": 0.2,
+    "num_beams": 1 ,
+    "cache_dir": "/scratch/qz2086/llaga_cache",
+    "template": "ND",
+    "prompt_file": "/scratch/qz2086/TrustGLM/Baselines/LLaGA/dataset/sup/cora_sup/sampled_2_10_test.jsonl", 
+    "output_dir": "/scratch/qz2086/TrustGLM/Baselines/LLaGA/output/cora_sup/0209_cora.txt"
+
+}
