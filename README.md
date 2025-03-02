@@ -14,7 +14,7 @@ pip install boto3 wandb sentencepiece
 pip install wandb
 ```
 
-## Textattack
+## Text Attacks
 1. Fork the repository https://github.com/RishabhMaheshwary/hard-label-attack and follow its instructions.
 2. place the files of textattack in the corresponding repository
 3. use the command to do attack
