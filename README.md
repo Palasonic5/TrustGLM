@@ -42,10 +42,10 @@ python run_nettack.py --dataset ogbn-arxiv_sup --attr_type sbert --gpu_id 0
 
 PRBCD(local):
 ```
-python prbcd_local.py --dataset_name ogbn-arxiv --attr_type sbert
+python prbcd_local_attack.py --dataset_name ogbn-arxiv --attr_type sbert
 ```
 
 PRBCD(global):
 ```
-python prbcd_global.py --dataset_name ogbn-arxiv --attr_type sbert
+python prbcd_global_attack.py --dataset_name ogbn-arxiv --attr_type sbert
 ```
