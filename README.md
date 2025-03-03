@@ -86,6 +86,7 @@ python eval.py \
     --output_dir model/graphprompter/output
 ```
 GraphTranslator:
+
 You can first run the following command to obtain node embeddings with attacked adjacency matrices:
 ```
 python model/GraphTranslator/Producer/inference/GraphSAGE_attack.py --dataset cora --attack nettack
