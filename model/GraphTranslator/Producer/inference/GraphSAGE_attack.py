@@ -1,63 +1,30 @@
+import argparse
 import time
 import torch
 from torch_geometric.data import Data
 import torch.nn.functional as F
 import torch.nn as nn
-from sklearn.linear_model import LogisticRegression
-from torch_geometric.loader import LinkNeighborLoader
 from torch_geometric.nn import SAGEConv
-from transformers import BertTokenizer, BertModel
 import numpy as np
+import os
+from scipy.sparse import csr_matrix
 
-old_data = torch.load("/scratch/xs2334/TrustGLM/Baselines/LLaGA/dataset/sup/cora_sup/processed_data.pt")
+# 解析命令行参数
+parser = argparse.ArgumentParser(description="Run inference on graph attacks")
+parser.add_argument("--dataset", type=str, required=True, help="Dataset name (e.g., arxiv, ogbn-products, pubmed)")
+parser.add_argument("--attack", type=str, required=True, choices=["nettack", "prbcd_local", "prbcd_global"], help="Attack type")
+args = parser.parse_args()
 
-if not old_data.edge_index.is_contiguous():
-    old_data.edge_index = old_data.edge_index.contiguous()
+dataset = args.dataset
+attack = args.attack
 
-keys_to_keep = {'x', 'y', 'edge_index', 'train_id', 'val_id', 'test_id', 'num_nodes'}
-
-data = Data()
-
-for key in keys_to_keep:
-    if hasattr(old_data, key):
-        setattr(data, key, getattr(old_data, key))
-    else:
-        print(f"Warning: {key} not found in original data.")
-
-dataset = "cora"
-np_filename = f'Baselines/GraphTranslator/data/{dataset}/{dataset}.npy'
-loaded_data_dict = np.load(np_filename, allow_pickle=True).item()
-
-train_ids = [int(i) for i in loaded_data_dict['train']]
-val_ids = [int(i) for i in loaded_data_dict['val']]
-test_ids = [int(i) for i in loaded_data_dict['test']]
-
-data.train_id = train_ids
-data.val_id = val_ids
-data.test_id = test_ids
-
-print("New train_id:", data.train_id)
-print("New val_id:", data.val_id)
-print("New test_id:", data.test_id)
-
-bert_node_embeddings = torch.load(f"Baselines/GraphTranslator/data/{dataset}/bert_node_embeddings.pt")
-data.x = bert_node_embeddings
-
-print("Data object created with BERT embeddings.")
-
-train_loader = LinkNeighborLoader(
-    data,
-    batch_size=512,
-    shuffle=True,
-    neg_sampling_ratio=1.0,
-    num_neighbors=[10, 10]
-)
-
+# 设定设备
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-data = data.to(device)
+# 加载 BERT 嵌入
+bert_node_embeddings = torch.load(f"Baselines/GraphTranslator/data/{dataset}/bert_node_embeddings.pt")
 
-
+# 定义 GraphSAGE 模型
 class Net(nn.Module):
     def __init__(self, in_dim, hid_dim, out_dim):
         super(Net, self).__init__()
@@ -69,108 +36,88 @@ class Net(nn.Module):
         x = F.relu(x)
         x = F.dropout(x, training=self.training)
         x = self.conv2(x, edge_index)
-
         return x
 
+# 加载预训练模型
+model_path = f"Baselines/GraphTranslator/Producer/inference/graphsage_models/{dataset}_state.pth"
 model = Net(768, 1024, 768).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+model.load_state_dict(torch.load(model_path))
+model.eval()
 
+if attack == "nettack":
+    adj_dir = f"Graph_attack/nettack/output/{dataset}_sup_bert"
+    output_dir = f"Baselines/GraphTranslator/data/{dataset}/nettack_test_emb"
+    os.makedirs(output_dir, exist_ok=True)
 
-def train():
-    model.train()
+    # 运行推理
+    for file_name in os.listdir(adj_dir):
+        if file_name.startswith("modified_adjacency_node_") and file_name.endswith(".npz"):
+            node_id = int(file_name.split("_")[-1].split(".")[0])
+            sparse_adj = np.load(os.path.join(adj_dir, file_name), allow_pickle=True)
+            adj_matrix = csr_matrix((sparse_adj['data'], sparse_adj['indices'], sparse_adj['indptr']), shape=sparse_adj['shape'])
 
-    total_loss = 0
-    for batch in train_loader:
-        batch = batch.to(device)
-        optimizer.zero_grad()
-        h = model(batch.x, batch.edge_index)
-        h_src = h[batch.edge_label_index[0]]
-        h_dst = h[batch.edge_label_index[1]]
-        pred = (h_src * h_dst).sum(dim=-1)
-        loss = F.binary_cross_entropy_with_logits(pred, batch.edge_label)
-        loss.backward()
-        optimizer.step()
-        total_loss += float(loss) * pred.size(0)
+            # 转换邻接矩阵为 edge_index
+            src, dst = adj_matrix.nonzero()
+            edge_index = torch.tensor([src, dst], dtype=torch.long)
 
-    return total_loss / data.num_nodes
+            # 创建数据对象
+            data = Data(x=bert_node_embeddings, edge_index=edge_index)
+            data = data.to(device)
 
+            # 运行模型
+            with torch.no_grad():
+                out = model(data.x, data.edge_index)
+                node_embedding = out[node_id].cpu()
 
-class LogisticRegression(nn.Module):
-    def __init__(self, input_dim, output_dim):
-        super(LogisticRegression, self).__init__()
-        self.linear1 = nn.Linear(input_dim, 512)
-        self.linear2 = nn.Linear(512, output_dim)
-        self.act = nn.ReLU()
+            # 保存嵌入
+            output_path = os.path.join(output_dir, f"node_{node_id}_embedding.pt")
+            torch.save(node_embedding, output_path)
+            print(f"Nettack - Node {node_id} embedding saved to {output_path}")
 
-    def forward(self, x):
-        out = self.linear1(x)
-        out = self.act(out)
-        out = self.linear2(out)
-        return out
+elif attack == "prbcd_local":
+    edge_index_dir = f"Graph_attack/prbcd/{dataset}_sup/target/bert"
+    output_dir = f"Baselines/GraphTranslator/data/{dataset}/prbcd_local_test_emb"
+    os.makedirs(output_dir, exist_ok=True)
 
+    # 运行推理
+    for file_name in os.listdir(edge_index_dir):
+        if file_name.startswith("pert_edge_index_") and file_name.endswith(".pt"):
+            node_id = int(file_name.split("_")[-1].split(".")[0])
+            edge_index = torch.load(f"{edge_index_dir}/{file_name}", map_location=torch.device('cpu'))
 
-def compute_accuracy(outputs, labels):
-    _, predicted = torch.max(outputs, 1)
-    correct = (predicted == labels).sum().item()
-    total = labels.size(0)
-    accuracy = correct / total
-    return accuracy
+            # 创建数据对象
+            data = Data(x=bert_node_embeddings, edge_index=edge_index)
+            data = data.to(device)
 
+            # 运行模型
+            with torch.no_grad():
+                out = model(data.x, data.edge_index)
+                node_embedding = out[node_id].cpu()
 
-def test():
+            # 保存嵌入
+            output_path = os.path.join(output_dir, f"node_{node_id}_embedding.pt")
+            torch.save(node_embedding, output_path)
+            print(f"Prbcd_Local - Node {node_id} embedding saved to {output_path}")
+
+elif attack == "prbcd_global":
+    edge_index_path = f"Graph_attack/prbcd/ogbn-{dataset}_sup/global/pert_edge_index_bert.pt"
+    edge_index = torch.load(edge_index_path, map_location=torch.device('cpu'))
+
+    # 读取测试节点
+    np_filename = f'Baselines/GraphTranslator/data/{dataset}/{dataset}.npy'
+    loaded_data_dict = np.load(np_filename, allow_pickle=True).item()
+    test_ids = [int(i) for i in loaded_data_dict['test']]
+
+    output_dir = f"Baselines/GraphTranslator/data/{dataset}/prbcd_global_test_emb"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 运行推理
     with torch.no_grad():
-        model.eval()
-        out = model(data.x, data.edge_index)
+        out = model(bert_node_embeddings.to(device), edge_index.to(device))
 
-    for epoch in range(1, 501):
-        LR_model.train()
-        optimizer.zero_grad()
-        pred = LR_model(out[data.train_id])
-
-        label = data.y[data.train_id].long()
-
-        loss = criterion(pred, label)
-        loss.backward()
-        optimizer.step()
-
-    LR_model.eval()
-    val_outputs = LR_model(out[data.val_id])
-    val_acc = compute_accuracy(val_outputs, data.y[data.val_id])
-
-    test_outputs = LR_model(out[data.test_id])
-    test_acc = compute_accuracy(test_outputs, data.y[data.test_id])
-
-    return val_acc, test_acc
-
-times = []
-best_acc = 0
-
-for epoch in range(10):
-    start = time.time()
-    input_dim = 768
-    output_dim = torch.max(data.y).item() + 1  # 转为 Python 整数
-    LR_model = LogisticRegression(input_dim, output_dim).to(device)
-    optimizer = torch.optim.Adam(LR_model.parameters(), lr=0.01)
-    criterion = nn.CrossEntropyLoss()
-    
-    loss = train()
-    print(f"Epoch {epoch + 1}, Loss: {loss:.4f}")
-
-    val_acc, test_acc = test()
-    print(f"Validation Accuracy: {val_acc:.4f}, Test Accuracy: {test_acc:.4f}")
-
-    if test_acc > best_acc:
-        best_acc = test_acc
-        print(f"New Best Accuracy: {best_acc:.4f} at Epoch {epoch + 1}")
-
-    times.append(time.time() - start)
-
-model = "Baselines/GraphTranslator/Producer/inference/graphsage_models/cora_state_0110.pth"
-print(f"Final Best Accuracy: {best_acc:.4f}")
-
-out = model(data.x, data.edge_index)
-print(out.shape)
-torch.save(out, "Baselines/GraphTranslator/data/cora/graphsage_node_embeddings_0109.pt")
-
-# 保存模型参数（推荐方式）
-torch.save(model.state_dict(), "Baselines/GraphTranslator/Producer/inference/graphsage_models/cora_state_0109.pth")
+    # 保存测试节点的嵌入
+    for node_id in test_ids:
+        node_embedding = out[node_id].cpu()
+        output_path = os.path.join(output_dir, f"node_{node_id}_embedding.pt")
+        torch.save(node_embedding, output_path)
+        print(f"Prbcd_Global - Node {node_id} embedding saved to {output_path}")
