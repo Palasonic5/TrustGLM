@@ -1,6 +1,9 @@
 # TrustGLM
 Code implementation for paper TrustGLM: Evaluating the Robustness of GraphLLMs Against Prompt, Text, and Structure Attacks
 
+![](new_structure.png)
+
+
 ## Environment Preparation
 
 ```
