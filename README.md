@@ -53,8 +53,6 @@ python prbcd_global_attack.py --dataset_name ogbn-arxiv --attr_type sbert
 
 LLaGA:
 
-## Data Processing
-
 To obtain prompt files containing graph sequences sampled from perturbed adjacency matrices:
 
 - `sampled_2_10_test_nettack.jsonl`
@@ -65,8 +63,6 @@ execute the following command
 ```
 python LLaGA/dataset/scripts/prep_data_attack.py --datasets cora pubmed ogbn-products --attacks nettack prbcd_global prbcd_local
 ```
-
-## Evaluation
 
 Afterwards, run the following command to evaluate on the attacked adjacency matrices. Make sure the `prompt_file` in `eval.sh` is set to the appropriate `sampled_2_10_test_{attack}.jsonl`:
 ```
