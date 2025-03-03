@@ -33,3 +33,19 @@ python3 texthoaxer-translator.py --target_model graphtranslator --counter_fittin
 
 ```
 ## Graph Structure Attack
+Use the following command to attack surrogate GCN to get perturbed adjacency matrices. (Local method: We generate a distinct perturbed adjacency matrix for each test node. Global method: We generate a single, unified perturbed adjacency matrix shared by all test nodes.)
+
+Nettack:
+```
+python run_nettack.py --dataset ogbn-arxiv_sup --attr_type sbert --gpu_id 0
+```
+
+PRBCD(local):
+```
+python prbcd_local.py --dataset_name ogbn-arxiv --attr_type sbert
+```
+
+PRBCD(global):
+```
+python prbcd_global.py --dataset_name ogbn-arxiv --attr_type sbert
+```
