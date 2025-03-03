@@ -73,7 +73,7 @@ PRBCD(global):
 ```
 python prbcd_global_attack.py --dataset_name ogbn-arxiv --attr_type sbert
 ```
-2. Apply perturbed adjacency matrices to GraphLLMs.
+2. Inference on GraphLLMs with perturbed adjacenct matrices.
 
 LLaGA:
 
