@@ -86,15 +86,15 @@ def eval_model(args):
     model = model.to(torch.float16).cuda()
     # data_dir=os.path.expanduser(args.data_dir)
     if args.dataset == "arxiv_sup":
-        data_dir = "Baselines/LLaGA/dataset/sup/ogbn-arxiv_sup"
+        data_dir = "model/LLaGA/dataset/sup/ogbn-arxiv_sup"
     elif args.dataset == "products_sup":
-        data_dir = "Baselines/LLaGA/dataset/sup/ogbn-products_sup"        
+        data_dir = "model/LLaGA/dataset/sup/ogbn-products_sup"        
     elif args.dataset == "pubmed_sup":
-        data_dir = "Baselines/LLaGA/dataset/sup/pubmed_sup"
+        data_dir = "model/LLaGA/dataset/sup/pubmed_sup"
     elif args.dataset == "cora_sup":
-        data_dir = "Baselines/LLaGA/dataset/sup/cora_sup"
+        data_dir = "model/LLaGA/dataset/sup/cora_sup"
     elif args.dataset == "computers_sup":
-        data_dir = "Baselines/LLaGA/dataset/sup/amazon-computers_sup"
+        data_dir = "model/LLaGA/dataset/sup/amazon-computers_sup"
     else:
         print(f"{args.dataset} not exists")
         raise ValueError
