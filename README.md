@@ -1,8 +1,14 @@
 # TrustGLM
-Code implementation for paper TrustGLM: Evaluating the Robustness of GraphLLMs Against Prompt, Text, and Structure Attacks
+Code implementation for paper **TrustGLM: Evaluating the Robustness of GraphLLMs Against Prompt, Text, and Structure Attacks**
+TrustGLM is a comprehensive study evaluating the vulnerability of Graph-LLMs to adversarial attacks across three dimensions: text, graph structure, and prompt manipulations. We implement state-of-the-art attack algorithms from each perspective to rigorously assess GraphLLM's resilience and robustness. 
 
 ![](new_structure.png)
 
+## Installation
+The impelmentation code can be installed by the following command
+```
+git clone https://github.com/Palasonic5/TrustGLM.git
+```
 
 ## Environment Preparation
 
@@ -16,6 +22,9 @@ pip install scipy==1.5.4
 pip install boto3 wandb sentencepiece
 pip install wandb
 ```
+
+## Data preparation
+Our processed dataset can be found [here](https://drive.google.com/drive/folders/1RPcz7cZRvpVXkSq9q2lHgaFbfP0vTlbG?usp=sharing)
 
 ## Text Attacks
 1. Fork the repository https://github.com/RishabhMaheshwary/hard-label-attack and follow its instructions.
