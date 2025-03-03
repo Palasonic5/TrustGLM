@@ -17,6 +17,7 @@ import argparse
 from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import k_hop_subgraph
 from scipy.sparse import csr_matrix
+import argparse
 
 from tqdm import trange
 DEFAULT_GRAPH_PAD_ID = -500
