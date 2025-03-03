@@ -32,7 +32,7 @@ Graphtranslator:
 python3 texthoaxer-translator.py --target_model graphtranslator --counter_fitting_cos_sim_path mat.txt  --USE_cache_path cache_path --atk_output_dir output_dir --max_seq_length 256 --sim_score_window 40 --nclasses 3 --budget 100000 --sampling_portion 0.2 --graphllm_config_file path_to_config_file
 
 ```
-## Graph Structure Attack
+## Graph Structure Attacks
 1. Use the following command to attack surrogate GCN to get perturbed adjacency matrices. (Local method: We generate a distinct perturbed adjacency matrix for each test node. Global method: We generate a single, unified perturbed adjacency matrix shared by all test nodes.)
 
 Nettack:
@@ -98,3 +98,24 @@ python model/GraphTranslator/Producer/inference/get_test_attack.py --dataset cor
 Replace `cora` with your desired dataset (e.g., `pubmed`, `ogbn-products`), and `nettack` with the attack method (e.g., `prbcd_local`, `prbcd_global`).
 
 Now, follow the inference process outlined in the original GraphTranslator README.md to obtain evaluation results on the attacked adjacency matrices.
+
+## Prompt Manipulation Attacks
+
+GraphPrompter
+
+You can run the evaluation script using the command below to obtain evaluation results with manipulated prompts. Adjust the `--dataset` parameter for different datasets and attacks:
+- `cora_sup_shuffle` (label shuffle attack)
+- `cora_sup_ln50` (label noise attack with 50% noise)
+- `cora_sup_ln100` (label noise attack with 100% noise)
+
+```
+export WANDB_MODE=offline
+export CUDA_VISIBLE_DEVICES=0
+python eval.py \
+    --dataset cora_sup_shuffle\
+    --ckpt_path model/graphprompter/output/cora_sup_graph_llm_7b_gat_seed0_checkpoint_4.pth \
+    --model_name graph_llm \
+    --output_dir model/graphprompter/output
+```
+
+LLaGA
