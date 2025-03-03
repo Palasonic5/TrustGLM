@@ -85,3 +85,14 @@ python eval.py \
     --model_name graph_llm \
     --output_dir model/graphprompter/output
 ```
+GraphTranslator:
+You can first run the following command to obtain node embeddings with attacked adjacency matrices:
+```
+python model/GraphTranslator/Producer/inference/GraphSAGE_attack.py --dataset cora --attack nettack
+```
+After obtaining the attacked node embeddings, generate the corresponding test data file:
+```
+python model/GraphTranslator/Producer/inference/get_test_attack.py --dataset cora --attack nettack
+```
+Replace `cora` with your desired dataset (e.g., `pubmed`, `ogbn-products`), and `nettack` with the attack method (e.g., `prbcd_local`, `prbcd_global`).
+Now, follow the inference process outlined in the original GraphTranslator README to obtain evaluation results on the attacked adjacency matrices.
