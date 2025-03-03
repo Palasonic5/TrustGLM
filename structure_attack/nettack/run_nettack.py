@@ -1,98 +1,127 @@
-from matplotlib import pyplot as plt
-from nettack import utils, GCN
-from nettack import nettack as ntk
-import numpy as np
-import scipy.sparse as sp
+import argparse
 import os
 import pickle
-gpu_id = 0
+import numpy as np
+import scipy.sparse as sp
+from nettack import utils, GCN
+from nettack import nettack as ntk
 
-dataset = "ogbn-arxiv_sup"
-attr_type = "sbert" #sbert for attacking LLaGA, GIA for attacking GraphPrompter and bert for attacking GraphTranslator
-_A_obs, _X_obs, _z_obs = utils.load_pt(f'dataset/{dataset}/processed_data.pt', dataset, attr_type)
-_A_obs = _A_obs + _A_obs.T
-_A_obs[_A_obs > 1] = 1
+def main():
+    parser = argparse.ArgumentParser(description='Nettack Attack Script')
+    parser.add_argument('--dataset', type=str, default='ogbn-arxiv_sup',
+                        help='Name of the dataset (default: ogbn-arxiv_sup)')
+    parser.add_argument('--attr_type', type=str, default='sbert',
+                        help='Attribute type (default: sbert, also supports bert, GIA, etc.)')
+    parser.add_argument('--gpu_id', type=int, default=0,
+                        help='GPU ID to use (default: 0)')
+    args = parser.parse_args()
 
-_X_obs = _X_obs.astype('float32')
+    dataset = args.dataset
+    attr_type = args.attr_type
+    gpu_id = args.gpu_id
 
-_N = _A_obs.shape[0]
-_K = _z_obs.max()+1
+    # Load data
+    print(f"Loading data for dataset: {dataset}, attr_type: {attr_type}")
+    _A_obs, _X_obs, _z_obs = utils.load_pt(
+        f'dataset/{dataset}/processed_data.pt',
+        dataset,
+        attr_type
+    )
 
-_Z_obs = np.eye(_K)[_z_obs].reshape(-1, _K)
+    # Symmetrize adjacency
+    _A_obs = _A_obs + _A_obs.T
+    _A_obs[_A_obs > 1] = 1
 
-_An = utils.preprocess_graph(_A_obs)
-sizes = [16, _K]
-degrees = _A_obs.sum(0).A1
+    _X_obs = _X_obs.astype('float32')
 
-np_filename = f'/dataset/split/{dataset}.npy'
-loaded_data_dict = np.load(np_filename, allow_pickle=True).item()
-# Convert the numpy arrays or non-Python int types to standard Python lists of int
-split_train = [int(i) for i in loaded_data_dict['train']]
-split_val = [int(i) for i in loaded_data_dict['val']]
-split_unlabeled = [int(i) for i in loaded_data_dict['test']]
+    _N = _A_obs.shape[0]
+    _K = _z_obs.max() + 1
 
-save_path = f"attack/Graph_attack/nettack/output/{dataset}_{attr_type}"
-os.makedirs(save_path, exist_ok=True)
+    _Z_obs = np.eye(_K)[_z_obs].reshape(-1, _K)
 
-# Train the surrogate model only once
-print("Training surrogate model...")
-surrogate_model = GCN.GCN(sizes, _An, _X_obs, with_relu=False, name="surrogate", gpu_id=gpu_id)
-surrogate_model.train(split_train, split_val, _Z_obs)
+    # Preprocess adjacency
+    _An = utils.preprocess_graph(_A_obs)
+    sizes = [16, _K]
+    degrees = _A_obs.sum(0).A1
 
-# Extract weights after training
-W1 = surrogate_model.W1.eval(session=surrogate_model.session)
-W2 = surrogate_model.W2.eval(session=surrogate_model.session)
-print("Surrogate model trained and weights extracted.")
+    # Load train/val/test split
+    np_filename = f'/dataset/split/{dataset}.npy'
+    loaded_data_dict = np.load(np_filename, allow_pickle=True).item()
+    split_train = [int(i) for i in loaded_data_dict['train']]
+    split_val = [int(i) for i in loaded_data_dict['val']]
+    split_unlabeled = [int(i) for i in loaded_data_dict['test']]
 
-weights_dir = f"attack/Graph_attack/nettack/output/surrogate_weights/{dataset}_{attr_type}"
-os.makedirs(weights_dir, exist_ok=True)  # 确保目录存在
+    # Create directory for attack output
+    save_path = f"attack/Graph_attack/nettack/output/{dataset}_{attr_type}"
+    os.makedirs(save_path, exist_ok=True)
 
-with open(os.path.join(weights_dir, "surrogate_weights.pkl"), "wb") as f:
-    pickle.dump({"W1": W1, "W2": W2}, f)
-print(f"Weights saved to {weights_dir}/surrogate_weights.pkl")
+    # Train the surrogate model only once
+    print("Training surrogate model...")
+    surrogate_model = GCN.GCN(sizes, _An, _X_obs, with_relu=False, name="surrogate", gpu_id=gpu_id)
+    surrogate_model.train(split_train, split_val, _Z_obs)
 
-with open(os.path.join(weights_dir, "surrogate_weights.pkl"), "rb") as f:
-    weights = pickle.load(f)
+    # Extract weights after training
+    W1 = surrogate_model.W1.eval(session=surrogate_model.session)
+    W2 = surrogate_model.W2.eval(session=surrogate_model.session)
+    print("Surrogate model trained and weights extracted.")
 
-W1 = weights["W1"]
-W2 = weights["W2"]
+    # Save and reload weights (optional, if you want to verify saving/reloading)
+    weights_dir = f"attack/Graph_attack/nettack/output/surrogate_weights/{dataset}_{attr_type}"
+    os.makedirs(weights_dir, exist_ok=True)  # ensure directory exists
 
-print("Weights loaded successfully.")
+    with open(os.path.join(weights_dir, "surrogate_weights.pkl"), "wb") as f:
+        pickle.dump({"W1": W1, "W2": W2}, f)
+    print(f"Weights saved to {weights_dir}/surrogate_weights.pkl")
 
+    with open(os.path.join(weights_dir, "surrogate_weights.pkl"), "rb") as f:
+        weights = pickle.load(f)
 
-# Iterate through all test nodes in split_unlabeled
-for u in split_unlabeled[:]:
-    print(f"Processing node: {u}")
-    assert u in split_unlabeled
+    W1 = weights["W1"]
+    W2 = weights["W2"]
+    print("Weights loaded successfully.")
 
-    if u in already:
-        continue
+    # Iterate through test nodes
+    for u in split_unlabeled:
+        print(f"Processing node: {u}")
 
-    # Initialize Nettack for the current node
-    nettack = ntk.Nettack(_A_obs, _X_obs, _z_obs, W1, W2, u, verbose=True)
+        # Initialize Nettack for the current node
+        nettack = ntk.Nettack(_A_obs, _X_obs, _z_obs, W1, W2, u, verbose=True)
 
-    # Set parameters for the attack
-    direct_attack = True
-    n_influencers = 1 if direct_attack else 5
-    n_perturbations = int(degrees[u])  # Number of perturbations
-    perturb_features = False
-    perturb_structure = True
+        # Set parameters for the attack
+        direct_attack = True
+        n_influencers = 1 if direct_attack else 5
+        n_perturbations = int(degrees[u])  # Number of perturbations
+        perturb_features = False
+        perturb_structure = True
 
-    # Perform the attack
-    nettack.reset()
-    nettack.attack_surrogate(n_perturbations, perturb_structure=perturb_structure, perturb_features=perturb_features, direct=direct_attack, n_influencers=n_influencers)
+        # Perform the attack
+        nettack.reset()
+        nettack.attack_surrogate(
+            n_perturbations,
+            perturb_structure=perturb_structure,
+            perturb_features=perturb_features,
+            direct=direct_attack,
+            n_influencers=n_influencers
+        )
 
-    # Get modified adjacency matrix
-    modified_adjacency = nettack.adj_preprocessed
+        # Get modified adjacency matrix
+        modified_adjacency = nettack.adj_preprocessed
 
-    # Save the modified adjacency matrix for the current node
-    if sp.issparse(modified_adjacency):
-        # Save as .npz for sparse matrix
-        sp.save_npz(f"{save_path}/modified_adjacency_node_{u}.npz", modified_adjacency)
-        print(f"Modified adjacency matrix for node {u} saved as modified_adjacency_node_{u}.npz")
-    else:
-        # Save as .npy for dense matrix
-        np.save(f"{save_path}/modified_adjacency_node_{u}.npy", modified_adjacency)
-        print(f"Modified adjacency matrix for node {u} saved as modified_adjacency_node_{u}.npy")
+        # Save the modified adjacency matrix for the current node
+        out_file_prefix = f"{save_path}/modified_adjacency_node_{u}"
+        if sp.issparse(modified_adjacency):
+            # Save as .npz for sparse matrix
+            sp.save_npz(f"{out_file_prefix}.npz", modified_adjacency)
+            print(f"Modified adjacency matrix for node {u} saved as {out_file_prefix}.npz")
+        else:
+            # Save as .npy for dense matrix
+            np.save(f"{out_file_prefix}.npy", modified_adjacency)
+            print(f"Modified adjacency matrix for node {u} saved as {out_file_prefix}.npy")
 
-print("All nodes processed.")
+        # Mark as processed (optional)
+        # already.add(u)
+
+    print("All nodes processed.")
+
+if __name__ == "__main__":
+    main()
