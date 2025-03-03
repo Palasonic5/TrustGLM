@@ -1,3 +1,4 @@
+import argparse
 import copy
 import os
 from typing import Optional
@@ -111,12 +112,19 @@ def metric(*args, **kwargs):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset_name", type=str, default="ogbn-arxiv",
+                        help="Name of the dataset (default: ogbn-arxiv)")
+    parser.add_argument("--attr_type", type=str, default="bert",
+                        help="Attribute type (e.g., bert for attacking GraphTranslator, sbert for attacking LLaGA, GIA for attacking GraphPrompter) (default: bert)")
+    args = parser.parse_args()
+
+    dataset_name = args.dataset_name
+    attr_type = args.attr_type
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    dataset_name = "ogbn-arxiv"
     data = torch.load(f"dataset/{dataset_name}/processed_data.pt")
-
-    attr_type = "bert"
+    
     if attr_type == "sbert":
         feature_file = f"dataset/{dataset_name}/sbert_x.pt"
         features = torch.load(feature_file)
