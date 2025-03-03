@@ -71,7 +71,7 @@ bash eval.sh
 
 GraphPrompter:
 
-You can run the evaluation script using the command below to obtain evaluation results on attacked adjacency matrices. Adjust the `--dataset` parameter for different datasets and attacks:
+You can use the command below to obtain evaluation results on attacked adjacency matrices. Adjust the `--dataset` parameter for different datasets and attacks:
 - `cora_sup_nettack`
 - `cora_sup_prbcd_l` (PRBCD local)
 - `cora_sup_prbcd_g` (PRBCD global)
@@ -103,7 +103,7 @@ Now, follow the inference process outlined in the original GraphTranslator READM
 
 GraphPrompter
 
-You can run the evaluation script using the command below to obtain evaluation results with manipulated prompts. Adjust the `--dataset` parameter for different datasets and attacks:
+You can use the command below to obtain evaluation results with manipulated prompts. Adjust the `--dataset` parameter for different datasets and attacks:
 - `cora_sup_shuffle` (label shuffle attack)
 - `cora_sup_ln50` (label noise attack with 50% noise)
 - `cora_sup_ln100` (label noise attack with 100% noise)
