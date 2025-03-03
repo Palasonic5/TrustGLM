@@ -105,8 +105,10 @@ GraphPrompter
 
 You can use the command below to obtain evaluation results with manipulated prompts. Adjust the `--dataset` parameter for different datasets and attacks:
 - `cora_sup_shuffle` (label shuffle attack)
-- `cora_sup_ln50` (label noise attack with 50% noise)
-- `cora_sup_ln100` (label noise attack with 100% noise)
+- `cora_sup_ln50` (label noise attack with 50% in-domain noise)
+- `cora_sup_ln100` (label noise attack with 100% in-domain noise)
+- `cora_sup_lnc50` (label noise attack with 100% in-domain noise)
+- `cora_sup_lnc100` (label noise attack with 100% in-domain noise)
 
 ```
 export WANDB_MODE=offline
