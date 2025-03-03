@@ -1,4 +1,5 @@
 # TrustGLM
+
 Code implementation for paper **TrustGLM: Evaluating the Robustness of GraphLLMs Against Prompt, Text, and Structure Attacks**
 
 ![](new_structure.png)
@@ -25,7 +26,17 @@ pip install wandb
 ```
 
 ## Data preparation
-Our processed dataset can be found [here](https://drive.google.com/drive/folders/1RPcz7cZRvpVXkSq9q2lHgaFbfP0vTlbG?usp=sharing)
+Our processed dataset can be found [here](https://drive.google.com/drive/folders/1RPcz7cZRvpVXkSq9q2lHgaFbfP0vTlbG?usp=sharing), which includes processed datasets from Amazon, ogbn-products, ogbn-arxiv, Pubmed, Cora. You can download the files and put it in TrustGLM/data directory. 
+
+| Dataset               | #Nodes   | #Edges     | #Classes |
+|-----------------------|----------|------------|----------|
+| Cora                  | 2,708    | 10,556     | 7        |
+| Pubmed                | 19,717   | 88,648     | 3        |
+| OGB-Arxiv             | 169,343  | 2,315,598  | 40       |
+| OGB-Products (subset) | 54,025   | 144,638    | 47       |
+| Amazon-Computers      | 87,229   | 721,107    | 10       |
+| Amazon-Sports         | 173,055  | 1,946,555  | 13       |
+
 
 ## Text Attacks
 1. Fork the repository https://github.com/RishabhMaheshwary/hard-label-attack and follow its instructions.
