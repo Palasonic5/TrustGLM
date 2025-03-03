@@ -53,7 +53,7 @@ python prbcd_global_attack.py --dataset_name ogbn-arxiv --attr_type sbert
 
 LLaGA:
 
-We sample the graph sequence from perturbed adjacency matrices by running the following command
+You can sample the graph sequence from perturbed adjacency matrices by running the following command
 ```
 python LLaGA/dataset/scripts/prep_data_attack.py --datasets cora pubmed ogbn-products --attacks nettack prbcd_global prbcd_local
 ```
