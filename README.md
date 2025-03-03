@@ -105,10 +105,8 @@ GraphPrompter
 
 You can use the command below to obtain evaluation results with manipulated prompts. Adjust the `--dataset` parameter for different datasets and attacks:
 - `cora_sup_shuffle` (label shuffle attack)
-- `cora_sup_ln50` (label noise attack with 50% in-domain noise)
 - `cora_sup_ln100` (label noise attack with 100% in-domain noise)
-- `cora_sup_lnc50` (label noise attack with 100% in-domain noise)
-- `cora_sup_lnc100` (label noise attack with 100% in-domain noise)
+- `cora_sup_lnc100` (label noise attack with 100% cross-domain noise)
 
 ```
 export WANDB_MODE=offline
@@ -121,3 +119,8 @@ python eval.py \
 ```
 
 LLaGA
+
+You can inference with following prompt files with manipulated prompts:
+- `sampled_2_10_test_shuffled_label.jsonl` (label shuffle attack)
+- `sampled_2_10_test_noisy_start_100_label_42.jsonl` (label noise attack with 100% in-domain noise)
+- `sampled_2_10_test_crossd_noisy_start_100_label_42.jsonl` (label noise attack with 100% cross-domain noise)
