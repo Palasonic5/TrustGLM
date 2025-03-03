@@ -271,27 +271,30 @@ def generate_jsonl_data(dataset, setting, k_hop=2, sample_size=10, attack=None, 
                     
                 f.write(json.dumps(data_item) + '\n')
 def main():
-    # datasets = ["amazon-sports", "amazon-computers", "amazon-photo"]
-    # datasets = ["ogbn-products"]
-    datasets = ["pubmed"]
-    # settings = ["sup","semi"]
-    settings = ["sup"]
-    attacks = ["prbcd_global", "prbcd_local"]
-    feature_type = "sbert"
-    
-    # Iterate through each dataset and setting combination
-    for dataset in datasets:
-        for setting in settings:
-            print(f"Processing dataset: {dataset}, setting: {setting}")
-            for attack in attacks:
+    parser = argparse.ArgumentParser(description='Generate JSONL data for given datasets, settings, and attacks.')
+    parser.add_argument('--datasets', nargs='+', default=['pubmed'],
+                        help='List of datasets to process. Example: --datasets cora pubmed ogbn-products')
+    parser.add_argument('--attacks', nargs='+', default=['prbcd_global', 'prbcd_local'],
+                        help='List of attacks. Example: --attacks prbcd_global prbcd_local nettack')
+    args = parser.parse_args()
 
-                k_hop = 2
-                sample_size = 10
+    k_hop = 2
+    sample_size = 10
 
-                    
-                # Call the generate_jsonl_data function
-                generate_jsonl_data(dataset, setting, k_hop, sample_size, attack, attr_type=feature_type)
-            print(f"Completed dataset: {dataset}, setting: {setting}")
+    # Iterate through each dataset, setting, and attack
+    for dataset in args.datasets:
+        print(f"Processing dataset: {dataset}")
+        for attack in args.attacks:
+            generate_jsonl_data(
+                dataset=dataset,
+                setting='sup',
+                k_hop=k_hop,
+                sample_size=sample_size,
+                attack=attack,
+                attr_type='sbert'
+            )
+        print(f"Completed dataset: {dataset}, setting: {setting}")
+
 
 if __name__ == "__main__":
     main()
