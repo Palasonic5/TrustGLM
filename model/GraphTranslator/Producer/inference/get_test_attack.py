@@ -3,9 +3,16 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import argparse
 
-dataset = "arxiv"
-attack = "prbcd_global"
+parser = argparse.ArgumentParser(description="Process dataset and attack method.")
+parser.add_argument("--dataset", type=str, required=True, help="Dataset name (e.g., cora, pubmed, ogbn-products)")
+parser.add_argument("--attack", type=str, required=True, help="Attack method name (e.g., prbcd_global)")
+
+args = parser.parse_args()
+dataset = args.dataset
+attack = args.attack
+
 # Paths
 data_path = f'Baselines/GraphTranslator/data/{dataset}/processed_data.pt'
 np_filename = f'Baselines/GraphTranslator/data/{dataset}/{dataset}.npy'
