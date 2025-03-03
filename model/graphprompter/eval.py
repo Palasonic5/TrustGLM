@@ -28,7 +28,10 @@ def main(args):
 
     # Step 2: Build Node Classification Dataset
     test_dataset = [dataset[i] for i in idx_split['test']]
-    collate_fn = collate_funcs[args.dataset](dataset.graph)
+    if "nettack" in args.dataset or "rbcd_l" in args.dataset:
+        collate_fn = collate_funcs[args.dataset](dataset.graph, dataset.edge_indices_dict)
+    else:
+        collate_fn = collate_funcs[args.dataset](dataset.graph)
     test_loader = DataLoader(test_dataset, batch_size=args.eval_batch_size, drop_last=False, pin_memory=True, shuffle=False, collate_fn=collate_fn)
 
     # Step 3: Build Model
