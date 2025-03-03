@@ -11,7 +11,7 @@ def main():
     parser.add_argument('--dataset', type=str, default='ogbn-arxiv_sup',
                         help='Name of the dataset (default: ogbn-arxiv_sup)')
     parser.add_argument('--attr_type', type=str, default='sbert',
-                        help='Attribute type (default: sbert, also supports bert, GIA, etc.)')
+                        help='Attribute type (default: sbert for LLaGA, bert for GraphTranslator, GIA for GraphPrompter, etc.)')
     parser.add_argument('--gpu_id', type=int, default=0,
                         help='GPU ID to use (default: 0)')
     args = parser.parse_args()
