@@ -96,4 +96,5 @@ After obtaining the attacked node embeddings, generate the corresponding test da
 python model/GraphTranslator/Producer/inference/get_test_attack.py --dataset cora --attack nettack
 ```
 Replace `cora` with your desired dataset (e.g., `pubmed`, `ogbn-products`), and `nettack` with the attack method (e.g., `prbcd_local`, `prbcd_global`).
-Now, follow the inference process outlined in the original GraphTranslator README to obtain evaluation results on the attacked adjacency matrices.
+
+Now, follow the inference process outlined in the original GraphTranslator README.md to obtain evaluation results on the attacked adjacency matrices.
