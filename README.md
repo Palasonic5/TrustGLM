@@ -52,7 +52,25 @@ python prbcd_global_attack.py --dataset_name ogbn-arxiv --attr_type sbert
 2. Apply perturbed adjacency matrices to GraphLLMs.
 
 LLaGA:
+
 We sample the graph sequence from perturbed adjacency matrices by running the following command
 ```
 python LLaGA/dataset/scripts/prep_data_attack.py --datasets cora pubmed ogbn-products --attacks nettack prbcd_global prbcd_local
+```
+
+GraphPrompter:
+
+You can run the evaluation script using the command below to obtain evaluation results on attacked adjacency matrices. Adjust the `--dataset` parameter for different datasets and attacks:
+- `cora_sup_nettack`
+- `cora_sup_prbcd_l` (PRBCD local)
+- `cora_sup_prbcd_g` (PRBCD global)
+
+```
+export WANDB_MODE=offline
+export CUDA_VISIBLE_DEVICES=0
+python eval.py \
+    --dataset cora_sup_nettack\
+    --ckpt_path model/graphprompter/output/cora_sup_graph_llm_7b_gat_seed0_checkpoint_4.pth \
+    --model_name graph_llm \
+    --output_dir model/graphprompter/output
 ```
