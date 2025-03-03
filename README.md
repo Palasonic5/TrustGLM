@@ -1,6 +1,8 @@
 # TrustGLM
 Code implementation for paper **TrustGLM: Evaluating the Robustness of GraphLLMs Against Prompt, Text, and Structure Attacks**
+
 ![](new_structure.png)
+
 TrustGLM is a comprehensive study evaluating the vulnerability of Graph-LLMs to adversarial attacks across three dimensions: text, graph structure, and prompt manipulations. We implement state-of-the-art attack algorithms from each perspective to rigorously assess GraphLLM's resilience and robustness. 
 
 ## Installation
